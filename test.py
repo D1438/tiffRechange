@@ -1,26 +1,32 @@
 from osgeo import osr, gdal
 
+
+
 # 座標を各解像度の値に一番近い値に変換する
-def normalize(resolution, parameter, i): 
+def normalize(resolution, parameter): 
+    i = 0
 
     while i < 180:
         now = abs(parameter - i)
         previous = abs(parameter - i - abs(resolution))
-        #print(now, previous)
 
         if now > previous: 
             answer = i
         i = i + abs(resolution)
+    
+    return round(answer, 5)
 
-    a = 0
-    return answer
 
-# get the existing coordinate system
+
+# tifファイルを開く
 ds = gdal.Open('/Users/ishizawadaisuke/Documents/graduate/temperture/ORD改変/04-01-02.tif')
 old_cs= osr.SpatialReference()
 old_cs.ImportFromWkt(ds.GetProjectionRef())
 
-# create the new coordinate system
+temperature1 = ds.GetRasterBand(1)
+temperature1_a = temperature1.ReadAsArray()
+
+# 世界測地系の設定
 wgs84_wkt = """
 GEOGCRS["WGS 84",
     DATUM["World Geodetic System 1984",
@@ -40,7 +46,7 @@ new_cs = osr.SpatialReference()
 new_cs .ImportFromWkt(wgs84_wkt)
 
 
-# create a transform object to convert between coordinate systems
+# 座標変換のcreate a transform object to convert between coordinate systems
 transform = osr.CoordinateTransformation(old_cs,new_cs) 
 
 #get the point to transform, pixel (0,0) in this case
@@ -50,36 +56,37 @@ height = ds.RasterYSize
 #gt_preはオリジナルの座標系のデータ
 gt_pre = ds.GetGeoTransform()
 
-#gtはgt_preを小数点第５位で切り落とした座標系のデータ
+#gtはgt_preを小数点第５位で切り落とした座標系のデータをgt_preの配列の個数分宣言した
 gt = [0] * len(gt_pre)
 for j in range(0, len(gt_pre)): 
-    #print(gt_pre[j])
     if gt_pre[j] < 0 :
         gt[j] = round(float(gt_pre[j]), 5)
     else :
         gt[j] = round(float(gt_pre[j]), 5)
 
 print(gt)
-minx = round(gt[0], 5)
-miny = round(gt[3] + width*gt[4] + height*round(-1*gt[5], 5)*-1, 5)
-maxx = round(gt[0] + width*round(gt[1], 5) + height*gt[2], 5)
-maxy = round(gt[3], 5)
 
-a = 0
-
-miny1 = round(normalize(gt[5], miny, a), 5)
-minx1 = round(normalize(gt[1], minx, a), 5)
-maxx1 = round(normalize(gt[1], maxx, a), 5)
-maxy1 = round(normalize(gt[5], maxy, a), 5)
+miny = normalize(gt[5], gt[3] + width*gt[4] + height*gt[5])
+minx = normalize(gt[1], gt[0])
+maxx = normalize(gt[1], gt[0] + width*gt[1] + height*gt[2])
+maxy = normalize(gt[5], gt[3])
 
 
 #get the coordinates in lat long
-minlatlong = transform.TransformPoint(minx1, miny1) 
-maxlatlong = transform.TransformPoint(maxx1, maxy1)
-
-print(minlatlong)
-print(maxlatlong)
-print(width)
-print(height)
+minlatlong = transform.TransformPoint(minx, miny)
+maxlatlong = transform.TransformPoint(maxx, maxy)
+print(minlatlong, maxlatlong)
 
 
+dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
+band = 1 # バンド数
+output = gdal.GetDriverByName('GTiff').Create('/Users/ishizawadaisuke/Desktop/aaa.tif', width, height, band, dtype) # 空の出力ファイル
+
+output.SetGeoTransform((minx, 0.00833, 0, maxy, 0, -0.00833)) # 座標系指定
+srs = osr.SpatialReference() # 空間参照情報
+srs.ImportFromEPSG(4326) # WGS84 UTM_48nに座標系を指定
+output.SetProjection(srs.ExportToWkt()) # 空間情報を結合
+
+output.GetRasterBand(1).WriteArray(temperature1_a)   # 赤バンド書き出し（b1はnumpy 2次元配列）
+output.FlushCache()                     # ディスクに書き出し
+output = None  
