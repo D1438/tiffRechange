@@ -1,4 +1,5 @@
 from osgeo import osr, gdal
+import math
 
 
 
@@ -27,9 +28,7 @@ def rounder(gt_array, pre_array):
 def minimum_caluculation(min) -> float: #現状ね、
     a = min[0]
     for i in range(0, 2): 
-        print(min[i])
         if a > min[i]: 
-            print("minimum動いてる〜？")
             a = min[i]
     
     return a
@@ -37,12 +36,18 @@ def minimum_caluculation(min) -> float: #現状ね、
 def maximum_caluculation(max) -> float: #現状ね、
     a = max[0]
     for i in range(0, 2): 
-        print(max[i])
         if a < max[i]:
-            print("maximum動いてる〜？") 
             a = max[i]
     
     return a
+
+def float_to_int(num) -> int:
+    if (num - int(num)) > 0.5: 
+        num = math.ceil(num)
+    elif (num - int(num)) < 0.5: 
+        num = math.floor(num)
+    
+    return num
 
 
 # tifファイルを開く
@@ -109,10 +114,14 @@ minx[1] = normalize(gt1[1], gt1[0])
 maxx[1] = normalize(gt1[1], gt1[0] + width*gt1[1] + height*gt1[2])
 maxy[1] = normalize(gt1[5], gt1[3])
 
+# outputの時に指定するために使う
 op_miny = minimum_caluculation(miny)
 op_minx = minimum_caluculation(minx)
 op_maxy = maximum_caluculation(maxy)
 op_maxx = maximum_caluculation(maxx)
+
+op_width = float_to_int((op_maxx-op_minx)/0.00833)
+op_height = float_to_int((op_maxy-op_miny)/0.00833)
 
 
 #get the coordinates in lat long
@@ -121,12 +130,14 @@ maxlatlong = transform.TransformPoint(maxx[0], maxy[0])
 minlatlong1 = transform.TransformPoint(minx[1], miny[1])
 maxlatlong1 = transform.TransformPoint(maxx[1], maxy[1])
 
+
 op_minlatlong = transform.TransformPoint(op_minx, op_miny)
 op_maxlatlong = transform.TransformPoint(op_maxx, op_maxy)
 
-print(minlatlong, maxlatlong)
-print(minlatlong1, maxlatlong1)
-print(op_minlatlong, op_maxlatlong)
+
+#print(minlatlong, maxlatlong)
+#print(minlatlong1, maxlatlong1)
+#print(op_minlatlong, op_maxlatlong)
 
 
 
