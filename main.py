@@ -64,7 +64,7 @@ for j in range(0, len(gt_pre)):
     else :
         gt[j] = round(float(gt_pre[j]), 5)
 
-print(gt)
+
 
 miny = normalize(gt[5], gt[3] + width*gt[4] + height*gt[5])
 minx = normalize(gt[1], gt[0])
