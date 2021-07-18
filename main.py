@@ -22,17 +22,17 @@ def normalize(resolution, parameter): # resolutionは解像度、parameterは各
     return answer
 
 
-def minimum_caluculation(min) -> float: #現状ね、
+def minimum_caluculation(min, len) -> float: #現状ね、
     a = min[0]
-    for i in range(0, 2): 
+    for i in range(0, len): 
         if a > min[i]: 
             a = min[i]
     
     return a
 
-def maximum_caluculation(max) -> float: #現状ね、
+def maximum_caluculation(max, len) -> float: #現状ね、
     a = max[0]
-    for i in range(0, 2): 
+    for i in range(0, len): 
         if a < max[i]:
             a = max[i]
     
@@ -54,20 +54,22 @@ def min_max_caluculater(gt_num, width_num, height_num, i):
     maxy[i] = normalize(gt_num[i][5], gt_num[i][3]) 
 
 
+def width_height_inserter(ds_num, width_num, height_num, i): 
+    width_num[i] = ds_num[i].RasterXSize
+    height_num[i] = ds_num[i].RasterYSize
+
 
 # tifファイルを開く
 start = time.time()
-ds = [0] * (len(sys.argv) - 1)
+ds = [0] * (len(sys.argv) - 2)
 
+for i in range(0, len(sys.argv) - 2): 
+    print('ds[', i, ']をオープン')
+    ds[i] = gdal.Open(sys.argv[i + 1])
 
-ds[0] = gdal.Open(sys.argv[1])
-ds[1] = gdal.Open(sys.argv[2])
 old_cs= osr.SpatialReference()
 old_cs.ImportFromWkt(ds[0].GetProjectionRef())
 old_cs.ImportFromWkt(ds[1].GetProjectionRef())
-
-temperature1_a = ds[0].GetRasterBand(1).ReadAsArray()
-temperature2_a = ds[1].GetRasterBand(1).ReadAsArray()
 
 
 # 世界測地系の設定
@@ -93,41 +95,40 @@ new_cs .ImportFromWkt(wgs84_wkt)
 # 座標変換のcreate a transform object to convert between coordinate systems
 transform = osr.CoordinateTransformation(old_cs,new_cs) 
 
-#get the point to transform, pixel (0,0) in this case
-width = [0] * 2
-height = [0] * 2
 
-width[0] = ds[0].RasterXSize
-height[0] = ds[0].RasterYSize
-width[1] = ds[1].RasterXSize
-height[1] = ds[1].RasterYSize
+#widthとheightの宣言、代入
+width = [0] * len(ds)
+height = [0] * len(ds)
 
-temperature_a = np.array([[[0 for i in range(5000)] for j in range(5000)] for k in range(len(sys.argv) - 1)])
+for i in range(0, len(ds)): 
+    width_height_inserter(ds, width, height, i)
+
+temperature_a = np.array([[[0.0 for i in range(3000)] for j in range(3000)] for k in range(len(sys.argv) - 1)])
 
 for i in range(0, len(ds)):
     temperature_pre = ds[i].GetRasterBand(1).ReadAsArray()
     print('temperature_pre[', i, ']の移し替え')
-    for j in range(0, width[0]): 
-        for k in range(0, height[0]): 
+    for j in range(0, width[i]): 
+        for k in range(0, height[i]): 
             temperature_a[i][k][j] = temperature_pre[k][j]
             
 
-gt = [[0 for i in range(6)] for j in range(2)]
+gt = [[0 for i in range(6)] for j in range(len(ds))]
 
 #gt_preはオリジナルの座標系のデータ
 
 
-for i in range(0, 2):
+for i in range(0, len(ds)):
     gt_pre = ds[i].GetGeoTransform()
     print(gt_pre)
     for j in range(0, 6):
         gt[i][j] = gt_pre[j]
 
 
-miny = [0] * len(ds)
-minx = [0] * len(ds)
-maxx = [0] * len(ds)
-maxy = [0] * len(ds)
+miny = [0.0] * len(ds)
+minx = [0.0] * len(ds)
+maxx = [0.0] * len(ds)
+maxy = [0.0] * len(ds)
 
 for i in range(0, len(ds)): 
     min_max_caluculater(gt, width, height, i)
@@ -140,62 +141,40 @@ print(maxx[0], maxy[0])
 
 
 # outputの時に最大最小値の座標を指定するために使う
-op_miny = minimum_caluculation(miny)
-op_minx = minimum_caluculation(minx)
-op_maxy = maximum_caluculation(maxy)
-op_maxx = maximum_caluculation(maxx)
+op_miny = minimum_caluculation(miny, len(ds))
+op_minx = minimum_caluculation(minx, len(ds))
+op_maxy = maximum_caluculation(maxy, len(ds))
+op_maxx = maximum_caluculation(maxx, len(ds))
 
 
 op_width = float_to_int((op_maxx-op_minx)/0.00833)
 op_height = float_to_int((op_maxy-op_miny)/0.00833)
 
+op_temperature = np.array([[0.0 for i in range(op_width)] for j in range(op_height)])
 
-op_temperature = np.array([[0.0]*op_width]*op_height)
+print(op_width, op_height)
 
+for i in range(0, len(ds)): 
+    print('temperature_a', i, 'の計算中')
 
-range_minx = float_to_int((minx[0] - op_minx)/abs(gt[0][1]))
-range_maxx = float_to_int((minx[0] - op_minx)/abs(gt[0][1]) + width[0])
-range_miny = float_to_int((miny[0] - op_miny)/abs(gt[0][5]))
-range_maxy = float_to_int((miny[0] - op_miny)/abs(gt[0][5]) + height[0])
+    range_minx = float_to_int((minx[i] - op_minx)/abs(gt[i][1]))
+    range_maxx = float_to_int((minx[i] - op_minx)/abs(gt[i][1]) + width[i])
+    range_miny = float_to_int((miny[i] - op_miny)/abs(gt[i][5]))
+    range_maxy = float_to_int((miny[i] - op_miny)/abs(gt[i][5]) + height[i])
 
-print(range_minx, range_miny)
-print(range_maxx, range_maxy)
-
-print("temperature1_aの計算")
-
-for i in range(range_minx, range_maxx): 
-    for j in range(range_miny, range_maxy): 
-        if -2 < temperature1_a[j - range_miny][i - range_minx] and temperature1_a[j - range_miny][i - range_minx] < 40:
-            op_temperature[j][i] = op_temperature[j][i] + temperature1_a[j - range_miny][i - range_minx]
-            if op_temperature[j][i] != temperature1_a[j - range_miny][i - range_minx]:
-                print(op_temperature[j][i], temperature1_a[j - range_miny][i - range_minx])
-                op_temperature[j][i] = op_temperature[j][i] / 2
-
-
-
-range_minx = float_to_int((minx[1] - op_minx)/abs(gt[1][1]))
-range_maxx = float_to_int((minx[1] - op_minx)/abs(gt[1][1]) + width[1])
-range_miny = float_to_int((miny[1] - op_miny)/abs(gt[1][5]))
-range_maxy = float_to_int((miny[1] - op_miny)/abs(gt[1][5]) + height[1])
-
-
-print("temperature2_aの計算")
-
-
-for k in range(range_minx, range_maxx): 
-    for l in range(range_miny, range_maxy): 
-        #print(l - range_miny, k - range_minx)
-        if -2 < temperature2_a[l - range_miny][k - range_minx] and temperature2_a[l - range_miny][k - range_minx] < 40:
-            op_temperature[l][k] = op_temperature[l][k] + temperature2_a[l - range_miny][k - range_minx]
-            if op_temperature[l][k] != temperature2_a[l - range_miny][k - range_minx]:
-                op_temperature[l][k] = op_temperature[l][k] / 2
+    for j in range(range_minx, range_maxx): 
+        for k in range(range_miny, range_maxy):
+            if -2 < temperature_a[i][k - range_miny][j - range_minx] and temperature_a[i][k - range_miny][j - range_minx] < 40:
+                op_temperature[k][j] = op_temperature[k][j] + temperature_a[i][k - range_miny][j - range_minx]
+                if op_temperature[k][j] != temperature_a[i][k - range_miny][j - range_minx]:
+                    op_temperature[k][j] = op_temperature[k][j] / 2
 
 
 
 print("書き込み中")
 dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
 band = 1 # バンド数
-output = gdal.GetDriverByName('GTiff').Create('/Users/ishizawadaisuke/Desktop/aaa.tif', op_width, op_height, band, dtype) # 空の出力ファイル
+output = gdal.GetDriverByName('GTiff').Create(sys.argv[len(sys.argv) - 1], op_width, op_height, band, dtype) # 空の出力ファイル
 
 output.SetGeoTransform((op_minx, 0.00833, 0, op_maxy, 0, -0.00833)) # 座標系指定
 srs = osr.SpatialReference() # 空間参照情報
