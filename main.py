@@ -48,10 +48,10 @@ def float_to_int(num) -> int:
 
 
 def min_max_caluculater(gt_num, width_num, height_num, i):
-    miny[i] = normalize(gt_num[i][5], gt_num[i][3] + width_num[i]*gt_num[i][4] + height_num[i]*gt_num[i][5])
-    minx[i] = normalize(gt_num[i][1], gt_num[i][0])
-    maxx[i] = normalize(gt_num[i][1], gt_num[i][0] + width_num[i]*gt_num[i][1] + height_num[i]*gt_num[i][2])
-    maxy[i] = normalize(gt_num[i][5], gt_num[i][3]) 
+    miny[i] = gt_num[i][3]
+    minx[i] = gt_num[i][0]
+    maxx[i] = gt_num[i][0] + width_num[i]*gt_num[i][1] + height_num[i]*gt_num[i][2]
+    maxy[i] = gt_num[i][3] + width_num[i]*gt_num[i][4] + height_num[i]*gt_num[i][5]
 
 
 def width_height_inserter(ds_num, width_num, height_num, i): 
@@ -63,7 +63,7 @@ def width_height_inserter(ds_num, width_num, height_num, i):
 start = time.time()
 ds = [0] * (len(sys.argv) - 2)
 
-for i in range(0, len(sys.argv) - 2): 
+for i in range(0, len(sys.argv) - 2):
     print('ds[', i, ']をオープン')
     ds[i] = gdal.Open(sys.argv[i + 1])
 
@@ -111,62 +111,57 @@ for i in range(0, len(ds)):
     for j in range(0, width[i]): 
         for k in range(0, height[i]): 
             temperature_a[i][k][j] = temperature_pre[k][j]
-            
+
 
 gt = [[0 for i in range(6)] for j in range(len(ds))]
 
 #gt_preはオリジナルの座標系のデータ
-
-
 for i in range(0, len(ds)):
     gt_pre = ds[i].GetGeoTransform()
-    print(gt_pre)
     for j in range(0, 6):
         gt[i][j] = gt_pre[j]
 
 
-miny = [0.0] * len(ds)
-minx = [0.0] * len(ds)
-maxx = [0.0] * len(ds)
-maxy = [0.0] * len(ds)
+miny = [0.0] * len(ds)#上
+minx = [0.0] * len(ds)#右
+maxx = [0.0] * len(ds)#左
+maxy = [0.0] * len(ds)#下
 
 for i in range(0, len(ds)): 
     min_max_caluculater(gt, width, height, i)
 
 
-print('本来の最小', gt[0][0], gt[0][3] + width[0]*gt[0][4] + height[0]*gt[0][5])
-print('本来の最大', gt[0][0] + width[0]*gt[0][1] + height[0]*gt[0][2], gt[0][3])
-print(minx[0], miny[0])
-print(maxx[0], maxy[0])
-
-
 # outputの時に最大最小値の座標を指定するために使う
-op_miny = minimum_caluculation(miny, len(ds))
+op_miny = maximum_caluculation(miny, len(ds))
 op_minx = minimum_caluculation(minx, len(ds))
-op_maxy = maximum_caluculation(maxy, len(ds))
+op_maxy = minimum_caluculation(maxy, len(ds))
 op_maxx = maximum_caluculation(maxx, len(ds))
 
 
 op_width = float_to_int((op_maxx-op_minx)/0.00833)
-op_height = float_to_int((op_maxy-op_miny)/0.00833)
+op_height = float_to_int((op_miny-op_maxy)/0.00833)
 
 op_temperature = np.array([[0.0 for i in range(op_width)] for j in range(op_height)])
 
-print(op_width, op_height)
+
 
 for i in range(0, len(ds)): 
     print('temperature_a', i, 'の計算中')
 
     range_minx = float_to_int((minx[i] - op_minx)/abs(gt[i][1]))
     range_maxx = float_to_int((minx[i] - op_minx)/abs(gt[i][1]) + width[i])
-    range_miny = float_to_int((miny[i] - op_miny)/abs(gt[i][5]))
-    range_maxy = float_to_int((miny[i] - op_miny)/abs(gt[i][5]) + height[i])
+    range_miny = float_to_int((op_miny - miny[i])/abs(gt[i][5]))
+    range_maxy = float_to_int((op_miny - miny[i])/abs(gt[i][5]) + height[i])
+
 
     for j in range(range_minx, range_maxx): 
         for k in range(range_miny, range_maxy):
-            if -2 < temperature_a[i][k - range_miny][j - range_minx] and temperature_a[i][k - range_miny][j - range_minx] < 40:
+
+            if 10.0 < temperature_a[i][k - range_miny][j - range_minx] and temperature_a[i][k - range_miny][j - range_minx] < 35.0:
+                save = op_temperature[k][j]
                 op_temperature[k][j] = op_temperature[k][j] + temperature_a[i][k - range_miny][j - range_minx]
-                if op_temperature[k][j] != temperature_a[i][k - range_miny][j - range_minx]:
+
+                if save != 0.0:             #初めてその座標に値を入れる時以外は
                     op_temperature[k][j] = op_temperature[k][j] / 2
 
 
@@ -176,7 +171,7 @@ dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
 band = 1 # バンド数
 output = gdal.GetDriverByName('GTiff').Create(sys.argv[len(sys.argv) - 1], op_width, op_height, band, dtype) # 空の出力ファイル
 
-output.SetGeoTransform((op_minx, 0.00833, 0, op_maxy, 0, -0.00833)) # 座標系指定
+output.SetGeoTransform((op_minx, 0.00833, 0, op_miny, 0, -0.00833)) # 座標系指定
 srs = osr.SpatialReference() # 空間参照情報
 srs.ImportFromEPSG(4326) # WGS84 UTM_48nに座標系を指定
 output.SetProjection(srs.ExportToWkt()) # 空間情報を結合
