@@ -31,16 +31,13 @@ for i in range(1, len(sys.argv) - 1):
     for j in range(kernel - 1, height - kernel):
         for k in range(kernel - 1, width - kernel):
             if temperature[j][k] != -60.0:
-                ans = 0
 
-                for m in range(-1 * kernel, kernel + 1):
-                    for n in range(-1 * kernel, kernel + 1):
-                        if temperature[j - m][k - n] != -60.0:
-                            ans = ans + temperature[j - m][k - n]
-                        else:
-                            ans = ans + temperature[j][k]
+                save_a = np.array([a[k - kernel:k + kernel + 1] for a in temperature[j - kernel:j + kernel + 1]])
+                
+                a = np.sum(save_a[save_a > 0])
+                b = temperature[j][k] * np.sum(save_a <= 0)
 
-                op_temperature[j][k] = ans/count
+                op_temperature[j][k] = (a + b)/count
 
 
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
@@ -57,6 +54,3 @@ for i in range(1, len(sys.argv) - 1):
     output = None
 elapsed_time = time.time() - start
 print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
-
-
-
