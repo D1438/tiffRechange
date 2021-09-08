@@ -140,8 +140,9 @@ op_maxx = maximum_caluculation(maxx, len(ds))
 op_width = float_to_int((op_maxx-op_minx)/0.00833)
 op_height = float_to_int((op_miny-op_maxy)/0.00833)
 
-op_temperature = np.array([[0.0 for i in range(op_width)] for j in range(op_height)])
-
+print('op_temperatureを生成中')
+op_temperature_pre = np.array([[[-60.0 for k in range(len(ds))]for i in range(op_width)] for j in range(op_height)])
+op_temperature = np.array([[-60.0 for i in range(op_width)] for j in range(op_height)])
 
 
 for i in range(0, len(ds)): 
@@ -152,17 +153,18 @@ for i in range(0, len(ds)):
     range_miny = float_to_int((op_miny - miny[i])/abs(gt[i][5]))
     range_maxy = float_to_int((op_miny - miny[i])/abs(gt[i][5]) + height[i])
 
-
     for j in range(range_minx, range_maxx): 
         for k in range(range_miny, range_maxy):
+            op_temperature_pre[k][j][i] = temperature_a[i][k - range_miny][j - range_minx]
 
-            if 10.0 < temperature_a[i][k - range_miny][j - range_minx] and temperature_a[i][k - range_miny][j - range_minx] < 35.0:
-                save = op_temperature[k][j]
-                op_temperature[k][j] = op_temperature[k][j] + temperature_a[i][k - range_miny][j - range_minx]
-
-                if save != 0.0:             #初めてその座標に値を入れる時以外は
-                    op_temperature[k][j] = op_temperature[k][j] / 2
-
+print('アウトプット用にtifに書き込み')
+for j in range(0, op_width):
+    for k in range(0, op_height):
+        
+        if np.any(op_temperature_pre[k][j] == 0.0):
+            op_temperature[k][j] = 0
+        if np.any(op_temperature_pre[k][j] == 2.0):
+            op_temperature[k][j] = 2
 
 
 print("書き込み中")

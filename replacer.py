@@ -19,15 +19,19 @@ for i in range(1, len(sys.argv)):
 
     for j in range(0, height):
         for k in range(0, width):
-            if temperature[j][k] == 0.0:
+            if temperature[j][k] <= 0.0 or 40.0 < temperature[j][k]:
                 temperature[j][k] = -60.0
+            elif 0.0 < temperature[j][k] and temperature[j][k] <= 20.0:
+                temperature[j][k] = 1
+            elif 20.0 < temperature[j][k] and temperature[j][k] <= 40.0:
+                temperature[j][k] = 2
 
 
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
     band = 1 # バンド数
     output = gdal.GetDriverByName('GTiff').Create(sys.argv[i], width, height, band, dtype) # 空の出力ファイル
 
-    output.SetGeoTransform((gt[0], 0.00833, 0, gt[3], 0, -0.00833)) # 座標系指定
+    output.SetGeoTransform((gt[0], gt[1], 0, gt[3], 0, gt[5])) # 座標系指定
     srs = osr.SpatialReference() # 空間参照情報
     srs.ImportFromEPSG(4326) # WGS84 UTM_48nに座標系を指定
     output.SetProjection(srs.ExportToWkt()) # 空間情報を結合
