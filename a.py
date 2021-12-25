@@ -1,6 +1,20 @@
 import numpy as np
 import sys
+import glob, datetime
+"""
+a = 31
+n = datetime.datetime(2021, 4, a-3)
+l = []
 
+for i in range(7):
+       pattern = n.strftime('%m-%d*')
+       print(pattern)
+       l += glob.glob(pattern)
+       n += datetime.timedelta(days=1)
+"""
+
+#print(len(sys.argv))
+#print(sys.argv[len(sys.argv) - 1])
 
 a = np.array([[0, 1, 2, 3],
        [4, 5, 6, 7],
@@ -11,22 +25,18 @@ d = np.array([0, 1, 2, 3])
 
 #m = np.array([[[0, 1], [2, 3]], [[4, 5], [6, 7]]])
 
-m = np.array([[[0 for i in range(3)] for j in range(3)] for k in range(3)])
-count = 0
+m = np.array([[[0 for i in range(2)] for j in range(2)] for k in range(3)])
+m[2][1][0] = 1
+count = 1
 
-for i in range(0, 3):
-       for j in range(0, 3):
-              for k in range(0, 3):
-                     m[i][j][k] = count
-                     count += 1
+#np.savetxt("/Users/ishizawadaisuke/Documents/graduate/temperture/proc-comp/op_80.csv", a, delimiter=",", fmt = '%d')
 
 c = np.array([l[:2] for l in a[1:3]])
 
 e = np.ravel(a)
 
+print(np.any(a == 1))
+
 #print(len(e))
-print(type(float(sys.argv[len(sys.argv) - 1])))
-
-print(np.all(a == 2))
-
-print(m[0][0])
+#print(int(count/80))
+#print(m)

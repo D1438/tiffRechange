@@ -6,9 +6,9 @@ from sys import argv
 
 
 
-ds = [0] * (len(sys.argv) - 1)
+ds_num = [0] * (len(sys.argv) - 1)
 
-for i in range(1, len(ds) + 1):
+for i in range(1, len(ds_num) + 1):
     print('[', i, ']をオープン')
     ds = gdal.Open(sys.argv[i])
 
@@ -29,7 +29,7 @@ for i in range(1, len(ds) + 1):
     op_maxy = 29.99633
     op_width = 1800
     op_height = 1200
-    op_temperature = np.array([[0.0 for i in range(op_width)] for j in range(op_height)])
+    op_temperature = np.array([[-1000.0 for j in range(op_width)] for k in range(op_height)])
 
     diff_width = round((op_minx - minx) / 0.00833)
     diff_height = round((maxy - op_maxy) / 0.00833)
@@ -37,9 +37,9 @@ for i in range(1, len(ds) + 1):
 
     print('[', i, ']をクロッピング中')
 
-    for j in range(0, op_height): 
+    for j in range(0, op_height):
         for k in range(0, op_width):
-            op_temperature[j][k] = temperature[diff_height+j][diff_width+k]
+            op_temperature[j][k] = temperature[diff_height + j][diff_width + k]
     
     
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...

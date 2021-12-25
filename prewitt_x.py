@@ -70,10 +70,6 @@ for i in range(1, len(sys.argv) - 1):
                 else:
                     temperature_x[j][k] = 0
 
-                #temperature_y[j][k] = np.sum(save_a * kernel_y)
-
-                #op_temperature[j][k] = np.sqrt(temperature_x[j][k] ** 2 + temperature_y[j][k] ** 2)
-
 
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
     band = 1 # バンド数

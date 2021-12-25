@@ -140,7 +140,7 @@ op_maxx = maximum_caluculation(maxx, len(ds))
 op_width = float_to_int((op_maxx-op_minx)/0.00833)
 op_height = float_to_int((op_miny-op_maxy)/0.00833)
 
-op_temperature = np.array([[0.0 for i in range(op_width)] for j in range(op_height)])
+op_temperature = np.array([[[0.0 for i in range(op_width)] for j in range(op_height)] for k in range(2)])
 
 
 
@@ -156,13 +156,21 @@ for i in range(0, len(ds)):
     for j in range(range_minx, range_maxx): 
         for k in range(range_miny, range_maxy):
 
-            if 10.0 < temperature_a[i][k - range_miny][j - range_minx] and temperature_a[i][k - range_miny][j - range_minx] < 35.0:
-                save = op_temperature[k][j]
-                op_temperature[k][j] = op_temperature[k][j] + temperature_a[i][k - range_miny][j - range_minx]
+            if temperature_a[i][k - range_miny][j - range_minx] != -1000.0:
+                op_temperature[0][k][j] = op_temperature[0][k][j] + temperature_a[i][k - range_miny][j - range_minx]
 
-                if save != 0.0:             #初めてその座標に値を入れる時以外は
-                    op_temperature[k][j] = op_temperature[k][j] / 2
+                op_temperature[1][k][j] += 1
+            
 
+for j in range(0, op_height):
+    for k in range(0, op_width):
+        if op_temperature[1][j][k] != 0.0:
+            op_temperature[0][j][k] = op_temperature[0][j][k] / op_temperature[1][j][k]
+
+for j in range(0, op_height): 
+    for k in range(0, op_width):
+        if op_temperature[0][j][k] == 0.0:
+            op_temperature[0][j][k] = -1000.0
 
 
 print("書き込み中")
@@ -175,7 +183,7 @@ srs = osr.SpatialReference() # 空間参照情報
 srs.ImportFromEPSG(4326) # WGS84 UTM_48nに座標系を指定
 output.SetProjection(srs.ExportToWkt()) # 空間情報を結合
 
-output.GetRasterBand(1).WriteArray(op_temperature)   # 赤バンド書き出し（b1はnumpy 2次元配列）
+output.GetRasterBand(1).WriteArray(op_temperature[0])   # 赤バンド書き出し（b1はnumpy 2次元配列）
 output.FlushCache()                     # ディスクに書き出し
 elapsed_time = time.time() - start
 print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")

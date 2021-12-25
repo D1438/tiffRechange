@@ -1,5 +1,5 @@
 import numpy
-import osgeo 
+import osgeo
 import numpy as np
 from osgeo import osr, gdal
 import sys
@@ -9,39 +9,20 @@ import time
 
 
 start = time.time()
-kernel = 1
+kernel = int(sys.argv[len(sys.argv) - 1])
 #int(sys.argv[len(sys.argv) - 1])
 count = kernel * 2 + 1
 
 def laplacian_kernel_maker(kernel_num):
-    array = np.array([[-1 for a in range(count)] for b in range(count)])
-
-    array[kernel_num][kernel_num] = count * count - 1
+    array = np.array([[1 for a in range(count)] for b in range(count)])
 
     return array
 
-laplacian_4 = np.array([[-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, 80, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-                        [-1, -1, -1, -1, -1, -1, -1, -1, -1]])
-
-laplacian_1 = np.array([[-1, -1, -1],
-                        [-1, 8, -1],
-                        [-1, -1, -1]])
-
-
-
-#print('カーネル', kernel, 'の計算中')
-
 laplacian = laplacian_kernel_maker(kernel)
 
+print(laplacian)
 
-for i in range(1, len(sys.argv)):
+for i in range(1, len(sys.argv) - 1):
 #   画像を読み込み
     print('[', i, ']をオープン')
     ds = gdal.Open(sys.argv[i])
@@ -60,7 +41,8 @@ for i in range(1, len(sys.argv)):
             save_a = np.array([a[k - kernel:k + kernel + 1] for a in temperature[j - kernel:j + kernel + 1]])
 
             if np.any(save_a == -1000.0) == False:
-                op_temperature[j][k] = np.sum(save_a * laplacian_1)
+                op_temperature[j][k] = save_a[kernel][kernel]
+
 
 
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...

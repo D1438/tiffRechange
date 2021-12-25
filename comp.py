@@ -3,6 +3,7 @@ import math
 import numpy as np
 import time
 import sys
+import glob, datetime
 from sys import argv
 
 
@@ -58,9 +59,13 @@ def width_height_inserter(ds_num, width_num, height_num, i):
     width_num[i] = ds_num[i].RasterXSize
     height_num[i] = ds_num[i].RasterYSize
 
+date = 4
+
+
 
 # tifファイルを開く
 start = time.time()
+
 ds = [0] * (len(sys.argv) - 2)
 
 for i in range(0, len(sys.argv) - 2):
