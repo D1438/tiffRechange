@@ -25,30 +25,34 @@ for i in range(1, len(sys.argv)):
 
     op_temperature = np.array([[0.0 for i in range(width)] for j in range(height)])
     
-    tem = np.array([[0 for l in range(90)] for n in range(60)])
+    tem = np.array([[0 for l in range(180)] for n in range(120)])
 
-    for j in range(0, 60):
-        for k in range(0, 90):
-            save_a = np.array([a[k * 20:(k + 1) * 20] for a in temperature[j * 20:(j + 1) * 20]])
+    for j in range(0, 120):
+        for k in range(0, 180):
+            save_a = np.array([a[k * 10:(k + 1) * 10] for a in temperature[j * 10:(j + 1) * 10]])
 
-            if np.any(save_a < -10) == False:
+            if np.any(save_a < 0) == False:
                 max_num = np.amax(save_a)
                 min_num = 100.0
                 
-                for m in range(0, 20):
-                    for n in range(0, 20):
+                # 最小値算出
+                for m in range(0, 10):
+                    for n in range(0, 10):
                         if save_a[m][n] < min_num:
                             min_num = save_a[m][n]
                 
+                #水温差の算出と代入
                 save_a.fill(max_num - min_num)
 
-                for m in range(0, 20):
-                    for n in range(0, 20):
-                        op_temperature[j * 20 + m][k * 20 + n] = save_a[m][n]
+                #opへの水温差の代入
+                for m in range(0, 10):
+                    for n in range(0, 10):
+                        op_temperature[j * 10 + m][k * 10 + n] = save_a[m][n]
             else:
-                for m in range(0, 20):
-                    for n in range(0, 20):
-                        op_temperature[j * 20 + m][k * 20 + n] = -1000.0
+                #-1000があった時の処理
+                for m in range(0, 10):
+                    for n in range(0, 10):
+                        op_temperature[j * 10 + m][k * 10 + n] = -1000.0
 
 
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...

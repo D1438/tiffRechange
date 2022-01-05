@@ -35,7 +35,8 @@ c = np.array([l[:2] for l in a[1:3]])
 
 e = np.ravel(a)
 
-print(np.any(a == 1))
+if np.any(a == -1000) == False:
+       print("うわああああああい！")
 
 #print(len(e))
 #print(int(count/80))

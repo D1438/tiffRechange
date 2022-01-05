@@ -180,12 +180,8 @@ for y in range(4, 31):
         for k in range(0, op_width):
             if op_temperature[1][j][k] != 0.0:
                 op_temperature[0][j][k] = op_temperature[0][j][k] / op_temperature[1][j][k]
-
-    for j in range(0, op_height):
-        for k in range(0, op_width):
-            if op_temperature[0][j][k] == 0.0:
+            elif op_temperature[0][j][k] == 0.0:
                 op_temperature[0][j][k] = -1000.0
-
 
     print("書き込み中")
     n = datetime.datetime(2021, 4, date)
@@ -203,7 +199,8 @@ for y in range(4, 31):
 
     output.GetRasterBand(1).WriteArray(op_temperature[0])   # 赤バンド書き出し（b1はnumpy 2次元配列）
     output.FlushCache()                     # ディスクに書き出し
-
+    
+    date += 1
 
 elapsed_time = time.time() - start
 print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")

@@ -30,9 +30,12 @@ for i in range(1, len(sys.argv)):
             if temperature[j][k] > 35.0:
                 temperature[j][k] = -1000.0
 
-            """
+            
             if temperature[j][k] > -300.0:
                 temperature[j][k] = abs(temperature[j][k])
+            """
+            
+            temperature[j][k] = int(temperature[j][k])
 
                 
 
@@ -48,4 +51,3 @@ for i in range(1, len(sys.argv)):
     output.GetRasterBand(1).WriteArray(temperature)   # 赤バンド書き出し（b1はnumpy 2次元配列）
     output.FlushCache()                     # ディスクに書き出し
     output = None
- 

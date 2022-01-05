@@ -1,6 +1,7 @@
 import numpy
 import osgeo 
 import os
+import math
 import numpy as np
 from osgeo import osr, gdal
 import sys
@@ -10,7 +11,7 @@ import time
 
 start = time.time()
 
-op_array = [0.0 for m in range(130)]
+op_array = np.array([[0 for m in range(30)] for n in range(130)])
 
 
 a = [0 for n in range(len(sys.argv))]   #前
@@ -74,15 +75,14 @@ for i in range(1, len(sys.argv)):
     for j in range(0, height):
         for k in range(0, width):
             if temperature[j][k] >= 0:
-                l = int(temperature[j][k] / 0.2)
-                op_array[i][int(l)] += 1
-    
-    
+                l: int = int(temperature[j][k])
+                op_array[i][l] += 1
+
 
 #print('最高潮目濃度 : ', max_temp)
 #print('最低潮目濃度 : ', min_temp)
 
-np.savetxt("/Users/ishizawadaisuke/Documents/graduate/temperture/csv/合成処理_0.2.csv", op_array, delimiter=",", fmt = '%f')
+np.savetxt("/Users/ishizawadaisuke/Documents/graduate/temperture/csv/合成処理_1.0.csv", op_array, delimiter=",", fmt = '%f')
 
 elapsed_time = time.time() - start
 print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
