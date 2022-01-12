@@ -18,7 +18,7 @@ for i in range(7):
 
 a = np.array([[0, 1, 2, 3],
        [4, 5, 6, 7],
-       [8, 9, 10, 11]])
+       [8, 9, 10, -1000]])
 b = np.array(a < 5)
 
 d = np.array([0, 1, 2, 3])
@@ -35,7 +35,7 @@ c = np.array([l[:2] for l in a[1:3]])
 
 e = np.ravel(a)
 
-if np.any(a == -1000) == False:
+if np.any(a == -1000) == True and np.any(a > -5):
        print("うわああああああい！")
 
 #print(len(e))

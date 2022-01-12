@@ -24,8 +24,6 @@ for i in range(1, len(sys.argv)):
     gt = ds.GetGeoTransform()
 
     op_temperature = np.array([[0.0 for i in range(width)] for j in range(height)])
-    
-    tem = np.array([[0 for l in range(180)] for n in range(120)])
 
     for j in range(0, 120):
         for k in range(0, 180):
@@ -69,13 +67,3 @@ for i in range(1, len(sys.argv)):
     output = None
 elapsed_time = time.time() - start
 print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
-
-
-"""
-
-            tem[j][k] = int(two_num / 80)
-    
-    np.set_printoptions(threshold=5400)
-    print(tem)
-
-"""

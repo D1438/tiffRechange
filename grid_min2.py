@@ -1,4 +1,5 @@
 import numpy
+from numpy.lib.npyio import save
 import osgeo 
 import numpy as np
 from osgeo import osr, gdal
@@ -37,13 +38,16 @@ for y in range(4, 31):
         print('temperature_pre[', i, ']の移し替え')
         for j in range(0, width):
             for k in range(0, height):
-                temperature_a[i][k][j] = temperature_pre[k][j]
+                if temperature_pre[k][j] >= -50.0:
+                    temperature_a[i][k][j] = temperature_pre[k][j]
+                else:
+                    temperature_a[i][k][j] = 100.0
 
     gt = ds[0].GetGeoTransform()
 
-    op_temperature = np.array([[[0.0 for i in range(width)] for j in range(height)] for k in range(2)])
+    op_temperature = np.array([[100.0 for i in range(width)] for j in range(height)])
     save_a = np.array([[0.0 for a in range(10)] for b in range(10)])
-
+    op_save_a = np.array([[100.0 for a in range(10)] for b in range(10)])
 
     for i in range(0, len(ds)):
         print('temperature_a[', i, ']の加算中')
@@ -53,25 +57,31 @@ for y in range(4, 31):
                 for m in range(0, 10):
                     for n in range(0, 10):
                         save_a[m][n] = temperature_a[i][j * 10 + m][k * 10 + n]
+                        op_save_a[m][n] = op_temperature[j * 10 + m][k * 10 + n]
                 
-                if np.any(save_a < 0.0) == False:
+                unique, freq = np.unique(save_a, return_counts=True) #return_counts=Trueが肝
+                min_num = unique[np.argmax(freq)] #freqの最も頻度が多い引数を取得して、uniqueから引っ張ってくる            
+                
+                op_unique, op_freq = np.unique(op_save_a, return_counts=True) #return_counts=Trueが肝
+                op_mode = op_unique[np.argmax(op_freq)] #freqの最も頻度が多い引数を取得して、uniqueから引っ張ってくる
+                
+                if np.any(op_mode > min_num) == True:
+                    save_a.fill(min_num)
+                    
                     for m in range(0, 10):
                         for n in range(0, 10):
-                            op_temperature[0][j * 10 + m][k * 10 + n] += save_a[m][n]
-                            
-                            op_temperature[1][j * 10 + m][k * 10 + n] += 1
+                            op_temperature[j * 10 + m][k * 10 + n] = save_a[m][n]
 
-    print('平均中') 
     for j in range(0, height):
         for k in range(0, width):
-            if op_temperature[1][j][k] != 0:
-                op_temperature[0][j][k] = op_temperature[0][j][k] / op_temperature[1][j][k]
-            elif op_temperature[1][j][k] == 0:
-                op_temperature[0][j][k] = -1000.0
+            if op_temperature[j][k] > 50.0:
+                op_temperature[j][k] = -1000.0
 
+    
+    
     print("書き込み中")
     n = datetime.datetime(2021, 4, date)
-    op_str = "/Users/ishizawadaisuke/Documents/graduate/temperture/温度変換後_平均/" + n.strftime('%m-%d.tif')
+    op_str = "/Users/ishizawadaisuke/Documents/graduate/temperture/処理合成/各日の水温差の合成_MIN値/" + n.strftime('%m-%d.tif')
 
     print("書き込み中")
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
@@ -83,7 +93,7 @@ for y in range(4, 31):
     srs.ImportFromEPSG(4326) # WGS84 UTM_48nに座標系を指定
     output.SetProjection(srs.ExportToWkt()) # 空間情報を結合
 
-    output.GetRasterBand(1).WriteArray(op_temperature[0])   # 赤バンド書き出し（b1はnumpy 2次元配列）
+    output.GetRasterBand(1).WriteArray(op_temperature)   # 赤バンド書き出し（b1はnumpy 2次元配列）
     output.FlushCache()                     # ディスクに書き出し
     
     date += 1

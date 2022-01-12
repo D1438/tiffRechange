@@ -59,7 +59,7 @@ for y in range(4, 31):
                 
                     for m in range(0, 10):
                         for n in range(0, 10):
-                            op_temperature[0][j * 10 + m][k * 10 + n] = save_a[m][n]
+                            op_temperature[0][j * 10 + m][k * 10 + n] += save_a[m][n]
                             
                             op_temperature[1][j * 10 + m][k * 10 + n] += 1
 

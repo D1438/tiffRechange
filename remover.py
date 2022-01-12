@@ -40,8 +40,8 @@ for i in range(1, len(sys.argv) - 1):
         for k in range(kernel, width - kernel):
             save_a = np.array([a[k - kernel:k + kernel + 1] for a in temperature[j - kernel:j + kernel + 1]])
 
-            if np.any(save_a == -1000.0) == True and np.any(save_a > -5) == True:
-                op_temperature[j][k] = 1
+            if np.any(save_a == -1000.0) == False:
+                op_temperature[j][k] = temperature[j][k]
 
 
 

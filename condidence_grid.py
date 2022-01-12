@@ -24,9 +24,9 @@ for i in range(1, len(sys.argv)):
     sum = 0     #average算出のためのsum
     count_except = 0      #-1000を除いたカウント
     
-    for j in range(0, 60):
-        for k in range(0, 90):
-            save_a = np.array([a[k * 20:(k + 1) * 20] for a in grid[j * 20:(j + 1) * 20]])
+    for j in range(0, 120):
+        for k in range(0, 180):
+            save_a = np.array([a[k * 10:(k + 1) * 10] for a in grid[j * 10:(j + 1) * 10]])
             
             unique, freq = np.unique(save_a, return_counts=True) #return_counts=Trueが肝
             mode = unique[np.argmax(freq)] #freqの最も頻度が多い引数を取得して、uniqueから引っ張ってくる
@@ -36,44 +36,45 @@ for i in range(1, len(sys.argv)):
                 count_except += 1
     
     average = sum / count_except      #全体の平均値
-    
+
     #不偏分散算出の過程
     print("不偏分散の算出")
     UV_sum = 0
-    
-    for j in range(0, 60):
-        for k in range(0, 90):
-            save_b = np.array([a[k * 20:(k + 1) * 20] for a in grid[j * 20:(j + 1) * 20]])
-            
+
+    for j in range(0, 120):
+        for k in range(0, 180):
+            save_b = np.array([a[k * 10:(k + 1) * 10] for a in grid[j * 10:(j + 1) * 10]])
+
             unique, freq = np.unique(save_b, return_counts=True) #return_counts=Trueが肝
             mode = unique[np.argmax(freq)] #freqの最も頻度が多い引数を取得して、uniqueから引っ張ってくる
-    
+
             if mode != -1000:
                 UV_sum += (mode - average) ** 2
     
     unbiased_variance = UV_sum / (count_except - 1)     #不偏分散
-    
-    confidence_interval = average + 2.576 * np.sqrt(unbiased_variance / count_except)       #信頼区間の+値
+
+    confidence_interval = 2.576 * np.sqrt(unbiased_variance)       #信頼区間の+値
 
     print("grid作成")
     #信頼区間以下のgridの作成
     op_grid = np.array([[-1000.0 for i in range(width)] for j in range(height)])
+    count = 0
 
-    for j in range(0, 60):
-        for k in range(0, 90):
-            save_c = np.array([a[k * 20:(k + 1) * 20] for a in grid[j * 20:(j + 1) * 20]])
+    for j in range(0, 120):
+        for k in range(0, 180):
+            save_c = np.array([a[k * 10:(k + 1) * 10] for a in grid[j * 10:(j + 1) * 10]])
 
             unique, freq = np.unique(save_c, return_counts=True) #return_counts=Trueが肝
             mode = unique[np.argmax(freq)] #freqの最も頻度が多い引数を取得して、uniqueから引っ張ってくる
 
-            if mode < confidence_interval:
-                for m in range(0, 20):
-                        for n in range(0, 20):
-                            op_grid[j * 20 + m][k * 20 + n] = mode
-            elif mode >= confidence_interval:
-                for m in range(0, 20):
-                        for n in range(0, 20):
-                            op_grid[j * 20 + m][k * 20 + n] = -1000.0
+            if mode <= average + confidence_interval:
+                for m in range(0, 10):
+                    for n in range(0, 10):
+                        op_grid[j * 10 + m][k * 10 + n] = mode
+            else:
+                count+= 1
+    
+    print(count)
     
     dtype = gdal.GDT_Float32 #others: gdal.GDT_Byte, ...
     band = 1 # バンド数

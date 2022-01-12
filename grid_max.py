@@ -33,20 +33,23 @@ gt = ds[0].GetGeoTransform()
 
 op_temperature = np.array([[0.0 for i in range(width)] for j in range(height)])
 save_a = np.array([[0.0 for a in range(10)] for b in range(10)])
-
+op_save_a = np.array([[0.0 for a in range(10)] for b in range(10)])
 
 for i in range(0, len(ds)):
     print('temperature_a[', i, ']の加算中')
     for j in range(0, 120):
         for k in range(0, 180):
             
+            for m in range(0, 10):
+                for n in range(0, 10):
+                    save_a[m][n] = temperature_a[i][j * 10 + m][k * 10 + n]
+                    op_save_a[m][n] = op_temperature[j * 10 + m][k * 10 + n]
+            
+            max_num = np.max(save_a)
+            
             if np.any(save_a < 0.0) == False:
-                for m in range(0, 10):
-                    for n in range(0, 10):
-                        save_a[m][n] = temperature_a[i][j * 10 + m][k * 10 + n]
-                
-                if np.any(np.array([a[k * 10:(k + 1) * 10] for a in op_temperature[j * 10:(j + 1) * 10]]) > np.max(save_a)) == True:
-                    save_a.fill(np.max(save_a))
+                if np.any(op_save_a > max_num) == False:
+                    save_a.fill(max_num)
                     
                     for m in range(0, 10):
                         for n in range(0, 10):

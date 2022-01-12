@@ -47,7 +47,7 @@ for i in range(0, len(ds)):
             if np.any(save_a < 0.0) == False:
                 for m in range(0, 10):
                     for n in range(0, 10):
-                        op_temperature[0][j * 10 + m][k * 10 + n] = save_a[m][n]
+                        op_temperature[0][j * 10 + m][k * 10 + n] += save_a[m][n]
                         
                         op_temperature[1][j * 10 + m][k * 10 + n] += 1
 
